@@ -7,6 +7,12 @@ class LinkedPair:
         self.value = value
         self.next = None
 
+    def __str__(self):
+        return f"Key: {self.key}, Value: {self.value}, Next: {self.next}"
+
+    def __repr__(self):
+        return f"Key: {self.key}, Value: {self.value}, Next: {self.next}"
+
 class HashTable:
     '''
     A hash table that with `capacity` buckets
@@ -15,7 +21,7 @@ class HashTable:
     def __init__(self, capacity):
         self.capacity = capacity  # Number of buckets in the hash table
         self.storage = [None] * capacity
-
+        self.count = 0
 
     def _hash(self, key):
         '''
@@ -23,7 +29,7 @@ class HashTable:
 
         You may replace the Python hash with DJB2 as a stretch goal.
         '''
-        return hash(key)
+        return self._hash_djb2(key)
 
 
     def _hash_djb2(self, key):
@@ -32,7 +38,11 @@ class HashTable:
 
         OPTIONAL STRETCH: Research and implement DJB2
         '''
-        pass
+        hash = 5381
+        for x in key:
+            hash = (( hash << 5) + hash) + ord(x)
+
+        return hash & 0xFFFFFFFF
 
 
     def _hash_mod(self, key):
@@ -51,8 +61,16 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
 
+        if self.count >= self.capacity:
+            self.resize()
+
+        index = self._hash_mod(key)
+        # if self.storage[index]:
+        #     self.storage[index][1] = value
+
+        self.storage[index] = LinkedPair(key, value)
+        self.count += 1
 
 
     def remove(self, key):
@@ -74,7 +92,11 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        index = self._hash_mod(key)
+        if self.storage[index]:
+            return self.storage[index].value
+        else:
+            return None
 
 
     def resize(self):
@@ -84,34 +106,46 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
 
+        if self.count < self.capacity:
+            return
 
+        self.capacity *= 2
+        new_storage = [None] * self.capacity
+        self.count = 0
 
-if __name__ == "__main__":
-    ht = HashTable(2)
+        for i in range(len(self.storage)):
+            if self.storage[i]:
+                key_hash = self._hash_mod(self.storage[i].key)
+                new_storage[key_hash] = self.storage[i]
 
-    ht.insert("line_1", "Tiny hash table")
-    ht.insert("line_2", "Filled beyond capacity")
-    ht.insert("line_3", "Linked list saves the day!")
+        self.storage = new_storage
+        print(self.storage)
 
-    print("")
-
-    # Test storing beyond capacity
-    print(ht.retrieve("line_1"))
-    print(ht.retrieve("line_2"))
-    print(ht.retrieve("line_3"))
-
-    # Test resizing
-    old_capacity = len(ht.storage)
-    ht.resize()
-    new_capacity = len(ht.storage)
-
-    print(f"\nResized from {old_capacity} to {new_capacity}.\n")
-
-    # Test if data intact after resizing
-    print(ht.retrieve("line_1"))
-    print(ht.retrieve("line_2"))
-    print(ht.retrieve("line_3"))
-
-    print("")
+# if __name__ == "__main__":
+#     ht = HashTable(2)
+#
+#     ht.insert("line_1", "Tiny hash table")
+#     ht.insert("line_2", "Filled beyond capacity")
+#     ht.insert("line_3", "Linked list saves the day!")
+#
+#     print("")
+#
+#     # Test storing beyond capacity
+#     print(ht.retrieve("line_1"))
+#     print(ht.retrieve("line_2"))
+#     print(ht.retrieve("line_3"))
+#
+#     # Test resizing
+#     old_capacity = len(ht.storage)
+#     ht.resize()
+#     new_capacity = len(ht.storage)
+#
+#     print(f"\nResized from {old_capacity} to {new_capacity}.\n")
+#
+#     # Test if data intact after resizing
+#     print(ht.retrieve("line_1"))
+#     print(ht.retrieve("line_2"))
+#     print(ht.retrieve("line_3"))
+#
+#     print("")
