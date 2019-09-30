@@ -66,8 +66,8 @@ class HashTable:
             self.resize()
 
         index = self._hash_mod(key)
-        # if self.storage[index]:
-        #     self.storage[index][1] = value
+        if self.storage[index]:
+            self.storage[index].value = value
 
         self.storage[index] = LinkedPair(key, value)
         self.count += 1
@@ -81,7 +81,11 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        index = self._hash_mod(key)
+        if self.storage[index]:
+            self.storage[index] = None
+        else:
+            print("Key not found")
 
 
     def retrieve(self, key):
@@ -120,7 +124,6 @@ class HashTable:
                 new_storage[key_hash] = self.storage[i]
 
         self.storage = new_storage
-        print(self.storage)
 
 # if __name__ == "__main__":
 #     ht = HashTable(2)
