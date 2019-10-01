@@ -22,6 +22,8 @@ class HashTable:
         self.capacity = capacity  # Number of buckets in the hash table
         self.storage = [None] * capacity
         self.count = 0
+        max_load_factor = 0.7
+        min_load_factor = 0.2
 
     def _hash(self, key):
         '''
@@ -29,6 +31,7 @@ class HashTable:
 
         You may replace the Python hash with DJB2 as a stretch goal.
         '''
+
         return self._hash_djb2(key)
 
 
@@ -66,11 +69,31 @@ class HashTable:
             self.resize()
 
         index = self._hash_mod(key)
-        if self.storage[index]:
+        node = self.storage[index]
+        new_node = LinkedPair(key, value)
+        #updates key value if found and key matches
+        if node is not None and node.key == key:
             self.storage[index].value = value
+        #adds a next item if found
+        elif node is not None:
+            self.insert_helper(node, new_node)
+        #if no other cases match, insert as head
+        else:
+            self.storage[index] = new_node
+            self.count += 1
 
-        self.storage[index] = LinkedPair(key, value)
-        self.count += 1
+        print(f"Load Factor: ({self.count / self.capacity:.2f})")
+
+    def insert_helper(self, node, value):
+        '''
+        Recursive insertion helper for main insert function
+
+        Run through node.next until None found and insert value there
+        '''
+        if node.next is None:
+            node.next = value
+        else:
+            self.insert_helper(node.next, value)
 
 
     def remove(self, key):
@@ -82,11 +105,16 @@ class HashTable:
         Fill this in.
         '''
         index = self._hash_mod(key)
-        if self.storage[index]:
+        node = self.storage[index]
+        if node is None:
+            print("Key Not Found")
+            return
+        elif node.key == key:
             self.storage[index] = None
+        elif node.next.key == key:
+            node.next = node.next.next
         else:
-            print("Key not found")
-
+            self.remove(node.next.key)
 
     def retrieve(self, key):
         '''
@@ -96,12 +124,16 @@ class HashTable:
 
         Fill this in.
         '''
-        index = self._hash_mod(key)
-        if self.storage[index]:
-            return self.storage[index].value
-        else:
-            return None
 
+        index = self._hash_mod(key)
+        node = self.storage[index]
+        if node is None:
+            print("Key not found")
+            return None
+        elif node.key == key:
+            return node.value
+        else:
+            self.retrieve(node.next.key)
 
     def resize(self):
         '''
@@ -114,41 +146,18 @@ class HashTable:
         if self.count < self.capacity:
             return
 
-        self.capacity *= 2
-        new_storage = [None] * self.capacity
-        self.count = 0
+        load_factor = self.count / self.capacity
 
-        for i in range(len(self.storage)):
-            if self.storage[i]:
-                key_hash = self._hash_mod(self.storage[i].key)
-                new_storage[key_hash] = self.storage[i]
+        if load_factor > self.max_load_factor:
+            print("Doubling capacity")
+            self.capacity *= 2
+            new_storage = [None] * self.capacity
+
+            for i in range(len(self.storage)):
+                if self.storage[i]:
+                    key_hash = self._hash_mod(self.storage[i].key)
+                    new_storage[key_hash] = self.storage[i]
+
+
 
         self.storage = new_storage
-
-# if __name__ == "__main__":
-#     ht = HashTable(2)
-#
-#     ht.insert("line_1", "Tiny hash table")
-#     ht.insert("line_2", "Filled beyond capacity")
-#     ht.insert("line_3", "Linked list saves the day!")
-#
-#     print("")
-#
-#     # Test storing beyond capacity
-#     print(ht.retrieve("line_1"))
-#     print(ht.retrieve("line_2"))
-#     print(ht.retrieve("line_3"))
-#
-#     # Test resizing
-#     old_capacity = len(ht.storage)
-#     ht.resize()
-#     new_capacity = len(ht.storage)
-#
-#     print(f"\nResized from {old_capacity} to {new_capacity}.\n")
-#
-#     # Test if data intact after resizing
-#     print(ht.retrieve("line_1"))
-#     print(ht.retrieve("line_2"))
-#     print(ht.retrieve("line_3"))
-#
-#     print("")
