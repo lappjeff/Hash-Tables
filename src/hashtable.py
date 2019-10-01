@@ -21,9 +21,9 @@ class HashTable:
     def __init__(self, capacity):
         self.capacity = capacity  # Number of buckets in the hash table
         self.storage = [None] * capacity
-        self.count = 0
-        max_load_factor = 0.7
-        min_load_factor = 0.2
+        self.count = 0 # Number of buckets filled
+        self.max_load_factor = 0.7
+        self.min_load_factor = 0.2
 
     def _hash(self, key):
         '''
@@ -65,9 +65,6 @@ class HashTable:
         Fill this in.
         '''
 
-        if self.count >= self.capacity:
-            self.resize()
-
         index = self._hash_mod(key)
         node = self.storage[index]
         new_node = LinkedPair(key, value)
@@ -77,12 +74,18 @@ class HashTable:
         #adds a next item if found
         elif node is not None:
             self.insert_helper(node, new_node)
+            self.count += 1
+            self.upsize()
+
         #if no other cases match, insert as head
         else:
             self.storage[index] = new_node
             self.count += 1
+            self.upsize()
 
-        print(f"Load Factor: ({self.count / self.capacity:.2f})")
+
+
+        # print(f"Load Factor: ({self.count / self.capacity:.2f})")
 
     def insert_helper(self, node, value):
         '''
@@ -92,6 +95,7 @@ class HashTable:
         '''
         if node.next is None:
             node.next = value
+            self.count += 1
         else:
             self.insert_helper(node.next, value)
 
@@ -104,6 +108,7 @@ class HashTable:
 
         Fill this in.
         '''
+
         index = self._hash_mod(key)
         node = self.storage[index]
         if node is None:
@@ -111,8 +116,13 @@ class HashTable:
             return
         elif node.key == key:
             self.storage[index] = None
+            self.count -= 1
+            self.downsize()
+
         elif node.next.key == key:
             node.next = node.next.next
+            self.count -= 1
+            self.downsize()
         else:
             self.remove(node.next.key)
 
@@ -135,29 +145,33 @@ class HashTable:
         else:
             self.retrieve(node.next.key)
 
-    def resize(self):
+    def upsize(self):
         '''
         Doubles the capacity of the hash table and
         rehash all key/value pairs.
-
-        Fill this in.
         '''
 
-        if self.count < self.capacity:
-            return
-
         load_factor = self.count / self.capacity
-
+        temp = [item for item in self.storage if item is not None]
         if load_factor > self.max_load_factor:
-            print("Doubling capacity")
             self.capacity *= 2
-            new_storage = [None] * self.capacity
+            self.storage = [None] * self.capacity
+            self.count = 0
+            for i in range(len(temp)):
+                key_hash = self._hash_mod(temp[i].key)
+                self.insert(temp[i].key, temp[i].value)
 
-            for i in range(len(self.storage)):
-                if self.storage[i]:
-                    key_hash = self._hash_mod(self.storage[i].key)
-                    new_storage[key_hash] = self.storage[i]
+    def downsize(self):
+        '''
+        Halve the capacity of the hash table and rehash all key/value pairs
+        '''
+        load_factor = self.count / self.capacity
+        temp = [item for item in self.storage if item is not None]
 
-
-
-        self.storage = new_storage
+        if load_factor < self.min_load_factor:
+            self.capacity = int(self.capacity / 2)
+            self.storage = [None] * self.capacity
+            self.count = 0
+            for i in range(len(temp)):
+                key_hash = self._hash_mod(temp[i].key)
+                self.insert(temp[i].key, temp[i].value)
